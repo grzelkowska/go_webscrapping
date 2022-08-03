@@ -71,7 +71,7 @@ func extractJob(card *goquery.Selection, c chan<- extractedJob) {
 	title := cleanString(id_path.Find("a>span").Text())
 	location := cleanString(card.Find(".companyLocation").Text())
 	summary := cleanString(card.Find(".job-snippet").Text())
-	// fmt.Println(id, title, location, summary)
+
 	c <- extractedJob{
 		id:       id,
 		title:    title,
@@ -98,6 +98,8 @@ func getPages() int {
 }
 
 func writeJobs(jobs []extractedJob) {
+	wC := make(chan []string)
+
 	file, err := os.Create("jobs.csv")
 	checkErr(err)
 
@@ -110,14 +112,22 @@ func writeJobs(jobs []extractedJob) {
 	checkErr(wErr)
 
 	for _, job := range jobs {
-		jobSlice := []string{
-			"https://kr.indeed.com/viewjob?jk=" + job.id,
-			job.title,
-			job.location,
-			job.summary,
-		}
+		go writeInCsv(job, wC)
+		jobSlice := <-wC
 		jwErr := w.Write(jobSlice)
 		checkErr(jwErr)
+	}
+
+	
+
+}
+
+func writeInCsv(job extractedJob, wC chan<- []string) {
+	wC <- []string{
+		"https://kr.indeed.com/viewjob?jk=" + job.id,
+		job.title,
+		job.location,
+		job.summary,
 	}
 }
 
