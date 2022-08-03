@@ -70,9 +70,9 @@ func getPage(page int, url string, mainC chan<- []extractedJob) {
 func extractJob(card *goquery.Selection, c chan<- extractedJob) {
 	id_path := card.Find(".jcs-JobTitle")
 	id, _ := id_path.Attr("data-jk")
-	title := cleanString(id_path.Find("a>span").Text())
-	location := cleanString(card.Find(".companyLocation").Text())
-	summary := cleanString(card.Find(".job-snippet").Text())
+	title := CleanString(id_path.Find("a>span").Text())
+	location := CleanString(card.Find(".companyLocation").Text())
+	summary := CleanString(card.Find(".job-snippet").Text())
 
 	c <- extractedJob{
 		id:       id,
