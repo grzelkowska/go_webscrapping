@@ -51,7 +51,7 @@ func writeJobs(jobs []extractedJob) {
 			"https://kr.indeed.com/viewjob?jk=" + job.id,
 			job.title,
 			job.location,
-			job.summary
+			job.summary,
 		}
 		jwErr := w.Write(jobSlice)
 		checkErr(jwErr)
@@ -61,6 +61,7 @@ func writeJobs(jobs []extractedJob) {
 
 func getPage(page int) []extractedJob {
 	var jobs []extractedJob
+	c := make(chan extractedJob)
 	pageURL := baseURL + "&start=" + strconv.Itoa(page*50)
 	fmt.Println("Requesting", pageURL)
 	res, err := http.Get(pageURL)
@@ -74,20 +75,25 @@ func getPage(page int) []extractedJob {
 
 	searchCards := doc.Find(".job_seen_beacon")
 	searchCards.Each(func(i int, s *goquery.Selection) {
-		job := extractJob(s)
-		jobs = append(jobs, job)
+		go extractJob(s, c)
 	})
+
+	for i := 0; i < searchCards.Length(); i++ {
+		job := <-c
+		jobs = append(jobs, job)
+	}
+
 	return jobs
 }
 
-func extractJob(card *goquery.Selection) extractedJob {
+func extractJob(card *goquery.Selection, c chan<- extractedJob) extractedJob {
 	id_path := card.Find(".jcs-JobTitle")
 	id, _ := id_path.Attr("data-jk")
 	title := cleanString(id_path.Find("a>span").Text())
 	location := cleanString(card.Find(".companyLocation").Text())
 	summary := cleanString(card.Find(".job-snippet").Text())
 	// fmt.Println(id, title, location, summary)
-	return extractedJob{
+	c <- extractedJob{
 		id:       id,
 		title:    title,
 		location: location,
