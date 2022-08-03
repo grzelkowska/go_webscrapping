@@ -86,7 +86,7 @@ func getPage(page int) []extractedJob {
 	return jobs
 }
 
-func extractJob(card *goquery.Selection, c chan<- extractedJob) extractedJob {
+func extractJob(card *goquery.Selection, c chan<- extractedJob) {
 	id_path := card.Find(".jcs-JobTitle")
 	id, _ := id_path.Attr("data-jk")
 	title := cleanString(id_path.Find("a>span").Text())
